@@ -1,0 +1,8 @@
+-- Drop tables in reverse order of dependencies
+DROP TABLE IF EXISTS scores CASCADE;
+DROP TABLE IF EXISTS phrases CASCADE;
+DROP TABLE IF EXISTS stages CASCADE;
+DROP TABLE IF EXISTS themes CASCADE;
+DROP TABLE IF EXISTS personal_access_tokens CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+

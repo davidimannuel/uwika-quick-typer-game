@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: quick_typer_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: s3cret
+      POSTGRES_DB: quick_typer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - quick_typer_network
+
+  migrate:
+    image: migrate/migrate:v4.17.0
+    container_name: quick_typer_migrate
+    volumes:
+      - ./dbscript/migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://postgres:s3cret@postgres:5432/quick_typer?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quick_typer_network
+    restart: on-failure
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: quick_typer_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: s3cret
+      DB_NAME: quick_typer
+      DB_SSLMODE: disable
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - quick_typer_network
+    restart: unless-stopped
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: quick_typer_admin_web
+    environment:
+      PORT: 3000
+      API_URL: http://api:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - quick_typer_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  quick_typer_network:
+    driver: bridge
+

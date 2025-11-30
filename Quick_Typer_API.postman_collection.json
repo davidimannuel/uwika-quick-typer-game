@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "Quick Typer API",
+    "description": "API Collection for Quick Typer Game",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Game",
+      "item": [
+        {
+          "name": "Get Active Stages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "stages"]
+            }
+          }
+        },
+        {
+          "name": "Get Stage Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/stage/stage-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "stage", "stage-001"]
+            }
+          }
+        },
+        {
+          "name": "Submit Score",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage_id\": \"stage-001\",\n  \"total_time_ms\": 15000,\n  \"total_errors\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/score/submit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "score", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/leaderboard?stage_id=stage-001&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leaderboard"],
+              "query": [
+                {
+                  "key": "stage_id",
+                  "value": "stage-001"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Stages",
+      "item": [
+        {
+          "name": "Create Stage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"JavaScript Basics\",\n  \"theme\": \"Programming\",\n  \"difficulty\": \"easy\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/stage",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stage"]
+            }
+          }
+        },
+        {
+          "name": "Update Stage",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Java Basics Updated\",\n  \"theme\": \"Programming\",\n  \"difficulty\": \"medium\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/stage/stage-001",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stage", "stage-001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Stage",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/stage/stage-001",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stage", "stage-001"]
+            }
+          }
+        },
+        {
+          "name": "Get All Stages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/stages",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stages"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Phrases",
+      "item": [
+        {
+          "name": "Create Phrase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage_id\": \"stage-001\",\n  \"text\": \"console.log(\\\"Hello World\\\");\",\n  \"sequence_number\": 1,\n  \"base_multiplier\": 1.5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/phrase",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "phrase"]
+            }
+          }
+        },
+        {
+          "name": "Update Phrase",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage_id\": \"stage-001\",\n  \"text\": \"console.log(\\\"Updated\\\");\",\n  \"sequence_number\": 1,\n  \"base_multiplier\": 2.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/phrase/phrase-001",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "phrase", "phrase-001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Phrase",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/phrase/phrase-001",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "phrase", "phrase-001"]
+            }
+          }
+        },
+        {
+          "name": "Get Phrases by Stage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/phrases?stage_id=stage-001",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "phrases"],
+              "query": [
+                {
+                  "key": "stage_id",
+                  "value": "stage-001"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      }
+    }
+  ]
+}
+
