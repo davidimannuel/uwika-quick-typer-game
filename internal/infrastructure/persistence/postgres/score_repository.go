@@ -17,49 +17,28 @@ func NewScoreRepository(db *sql.DB) repositories.ScoreRepository {
 	return &scoreRepository{db: db}
 }
 
-func (r *scoreRepository) Upsert(ctx context.Context, score *models.Score) (bool, error) {
+func (r *scoreRepository) Create(ctx context.Context, score *models.Score) error {
 	score.CompletedAt = time.Now()
 
-	// Check if score exists
-	existingScore, err := r.FindByUserAndStage(ctx, score.UserID, score.StageID)
-	if err != nil {
-		return false, err
-	}
+	query := `
+		INSERT INTO scores (user_id, stage_id, final_score, total_time_ms, total_errors, completed_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		score.UserID, score.StageID, score.FinalScore, score.TotalTimeMs, score.TotalErrors, score.CompletedAt,
+	)
 
-	isInserted := false
-
-	if existingScore == nil {
-		// Insert new score
-		query := `
-			INSERT INTO scores (user_id, stage_id, final_score, total_time_ms, total_errors, completed_at)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`
-		_, err = r.db.ExecContext(ctx, query,
-			score.UserID, score.StageID, score.FinalScore, score.TotalTimeMs, score.TotalErrors, score.CompletedAt,
-		)
-		isInserted = true
-	} else {
-		// Update only if new score is better
-		if score.FinalScore > existingScore.FinalScore {
-			query := `
-				UPDATE scores 
-				SET final_score = $3, total_time_ms = $4, total_errors = $5, completed_at = $6
-				WHERE user_id = $1 AND stage_id = $2
-			`
-			_, err = r.db.ExecContext(ctx, query,
-				score.UserID, score.StageID, score.FinalScore, score.TotalTimeMs, score.TotalErrors, score.CompletedAt,
-			)
-		}
-	}
-
-	return isInserted, err
+	return err
 }
 
 func (r *scoreRepository) FindByUserAndStage(ctx context.Context, userID, stageID string) (*models.Score, error) {
+	// Get best score for this user on this stage
 	query := `
 		SELECT user_id, stage_id, final_score, total_time_ms, total_errors, completed_at
 		FROM scores 
 		WHERE user_id = $1 AND stage_id = $2
+		ORDER BY final_score DESC, total_time_ms ASC
+		LIMIT 1
 	`
 	score := &models.Score{}
 	err := r.db.QueryRowContext(ctx, query, userID, stageID).Scan(
@@ -75,10 +54,17 @@ func (r *scoreRepository) FindByUserAndStage(ctx context.Context, userID, stageI
 }
 
 func (r *scoreRepository) FindLeaderboardByStage(ctx context.Context, stageID string, limit int) ([]*models.Score, error) {
+	// Get best score per user for the leaderboard
 	query := `
+		WITH best_scores AS (
+			SELECT DISTINCT ON (user_id)
+				user_id, stage_id, final_score, total_time_ms, total_errors, completed_at
+			FROM scores 
+			WHERE stage_id = $1
+			ORDER BY user_id, final_score DESC, total_time_ms ASC
+		)
 		SELECT user_id, stage_id, final_score, total_time_ms, total_errors, completed_at
-		FROM scores 
-		WHERE stage_id = $1
+		FROM best_scores
 		ORDER BY final_score DESC, total_time_ms ASC
 		LIMIT $2
 	`

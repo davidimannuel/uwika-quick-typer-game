@@ -44,7 +44,7 @@ type PhraseRepository interface {
 }
 
 type ScoreRepository interface {
-	Upsert(ctx context.Context, score *models.Score) (bool, error) // returns true if inserted, false if updated
+	Create(ctx context.Context, score *models.Score) error
 	FindByUserAndStage(ctx context.Context, userID, stageID string) (*models.Score, error)
 	FindLeaderboardByStage(ctx context.Context, stageID string, limit int) ([]*models.Score, error)
 	FindByUserID(ctx context.Context, userID string) ([]*models.Score, error)

@@ -3,24 +3,21 @@ package services
 import (
 	"context"
 	"errors"
-	"math"
 
 	"uwika_quick_typer_game/internal/domain/models"
 	"uwika_quick_typer_game/internal/domain/repositories"
+	domainservices "uwika_quick_typer_game/internal/domain/services"
 )
 
 var (
 	ErrStageNotFound = errors.New("stage not found")
 )
 
-const (
-	ErrorPenaltyPerMistake = 50.0
-)
-
 type GameService struct {
-	stageRepo  repositories.StageRepository
-	phraseRepo repositories.PhraseRepository
-	scoreRepo  repositories.ScoreRepository
+	stageRepo       repositories.StageRepository
+	phraseRepo      repositories.PhraseRepository
+	scoreRepo       repositories.ScoreRepository
+	scoreCalculator *domainservices.ScoreCalculator
 }
 
 func NewGameService(
@@ -29,9 +26,10 @@ func NewGameService(
 	scoreRepo repositories.ScoreRepository,
 ) *GameService {
 	return &GameService{
-		stageRepo:  stageRepo,
-		phraseRepo: phraseRepo,
-		scoreRepo:  scoreRepo,
+		stageRepo:       stageRepo,
+		phraseRepo:      phraseRepo,
+		scoreRepo:       scoreRepo,
+		scoreCalculator: domainservices.NewScoreCalculator(),
 	}
 }
 
@@ -56,8 +54,9 @@ func (s *GameService) GetStageWithPhrases(ctx context.Context, stageID string) (
 	return stage, phrases, nil
 }
 
+// SubmitScore - calculation dilakukan di domain service
 func (s *GameService) SubmitScore(ctx context.Context, userID, stageID string, totalTimeMs, totalErrors int) (*models.Score, string, error) {
-	// Get stage and phrases to calculate score
+	// Get stage and phrases
 	stage, phrases, err := s.GetStageWithPhrases(ctx, stageID)
 	if err != nil {
 		return nil, "", err
@@ -66,34 +65,68 @@ func (s *GameService) SubmitScore(ctx context.Context, userID, stageID string, t
 		return nil, "", ErrStageNotFound
 	}
 
-	// Calculate final score
-	finalScore := s.calculateScore(phrases, totalTimeMs, totalErrors)
+	// Calculate metrics for domain service
+	totalChars := 0
+	totalMultiplier := 0.0
+	for _, phrase := range phrases {
+		totalChars += len(phrase.Text)
+		totalMultiplier += phrase.BaseMultiplier
+	}
+
+	avgMultiplier := 1.0
+	if len(phrases) > 0 {
+		avgMultiplier = totalMultiplier / float64(len(phrases))
+	}
+
+	// Simple accuracy calculation based on errors
+	accuracy := 100.0
+	if totalChars > 0 && totalErrors > 0 {
+		accuracy = float64(totalChars-totalErrors) / float64(totalChars) * 100
+		if accuracy < 0 {
+			accuracy = 0
+		}
+	}
+
+	// Calculate typing speed (WPM)
+	timeTakenSeconds := float64(totalTimeMs) / 1000.0
+	if timeTakenSeconds == 0 {
+		timeTakenSeconds = 0.001
+	}
+	typingSpeed := (float64(totalChars) / timeTakenSeconds) * 60.0 / 5.0 // WPM
+
+	// Use domain service untuk calculate score
+	calcInput := domainservices.CalculationInput{
+		Accuracy:       accuracy,
+		TypingSpeed:    typingSpeed,
+		TimeTaken:      timeTakenSeconds,
+		MaxCombo:       0,
+		PerfectPhrases: 0,
+		BaseMultiplier: avgMultiplier,
+	}
+
+	// Validate metrics
+	if err := s.scoreCalculator.ValidateMetrics(accuracy, typingSpeed, timeTakenSeconds); err != nil {
+		return nil, "", err
+	}
+
+	// Calculate final score using domain service
+	calcResult := s.scoreCalculator.CalculateScore(calcInput)
 
 	score := &models.Score{
 		UserID:      userID,
 		StageID:     stageID,
-		FinalScore:  finalScore,
+		FinalScore:  float64(calcResult.FinalScore),
 		TotalTimeMs: totalTimeMs,
 		TotalErrors: totalErrors,
 	}
 
-	isInserted, err := s.scoreRepo.Upsert(ctx, score)
+	// Allow multiple attempts - always insert
+	err = s.scoreRepo.Create(ctx, score)
 	if err != nil {
 		return nil, "", err
 	}
 
-	status := "IGNORED"
-	if isInserted {
-		status = "UPSERTED"
-	} else {
-		// Check if it's actually updated (better score)
-		existingScore, _ := s.scoreRepo.FindByUserAndStage(ctx, userID, stageID)
-		if existingScore != nil && existingScore.FinalScore == finalScore {
-			status = "UPSERTED"
-		}
-	}
-
-	return score, status, nil
+	return score, "INSERTED", nil
 }
 
 func (s *GameService) GetLeaderboard(ctx context.Context, stageID string, limit int) ([]*models.Score, error) {
@@ -102,28 +135,3 @@ func (s *GameService) GetLeaderboard(ctx context.Context, stageID string, limit 
 	}
 	return s.scoreRepo.FindLeaderboardByStage(ctx, stageID, limit)
 }
-
-func (s *GameService) calculateScore(phrases []*models.Phrase, totalTimeMs, totalErrors int) float64 {
-	// Calculate: (sum(phraseLength * multiplier) / totalTimeInSeconds) - errorPenalty
-	totalTimeSeconds := float64(totalTimeMs) / 1000.0
-	if totalTimeSeconds == 0 {
-		totalTimeSeconds = 0.001 // Prevent division by zero
-	}
-
-	var scoreSum float64
-	for _, phrase := range phrases {
-		phraseLength := float64(len(phrase.Text))
-		scoreSum += phraseLength * phrase.BaseMultiplier
-	}
-
-	scorePerSecond := scoreSum / totalTimeSeconds
-	errorPenalty := float64(totalErrors) * ErrorPenaltyPerMistake
-
-	finalScore := scorePerSecond - errorPenalty
-	if finalScore < 0 {
-		finalScore = 0
-	}
-
-	return math.Round(finalScore*100) / 100 // Round to 2 decimal places
-}
-
