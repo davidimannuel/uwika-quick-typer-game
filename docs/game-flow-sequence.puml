@@ -1,0 +1,102 @@
+@startuml Quick Typer Game - Game Flow Sequence
+
+actor Player
+participant "Mobile App" as App
+participant "API\n(Game Handler)" as Handler
+participant "Game Service" as Service
+participant "Score Calculator\n(Domain)" as Calculator
+participant "Stage Repo" as StageRepo
+participant "Phrase Repo" as PhraseRepo
+participant "Score Repo" as ScoreRepo
+database "PostgreSQL" as DB
+
+== Authentication ==
+Player -> App: Login
+App -> Handler: POST /api/auth/login
+Handler -> Service: AuthService.Login()
+Service -> DB: Find user & validate
+DB --> Service: User + Token
+Service --> Handler: AuthResponse
+Handler --> App: access_token
+App --> Player: Logged in
+
+== Get Active Stages ==
+Player -> App: View Stages
+App -> Handler: GET /api/stages\n+ Bearer token
+Handler -> Service: GetActiveStages()
+Service -> StageRepo: FindAllActive()
+StageRepo -> DB: SELECT * FROM stages\nWHERE is_active = true
+DB --> StageRepo: Stage records
+StageRepo --> Service: []Stage
+Service --> Handler: []Stage
+Handler --> App: List of active stages\n(with is_active: true)
+App --> Player: Show stages
+
+== Get Stage Details with Phrases ==
+Player -> App: Select stage
+App -> Handler: GET /api/stages/:id
+Handler -> Service: GetStageWithPhrases(stageID)
+Service -> StageRepo: FindByID(stageID)
+StageRepo -> DB: SELECT * FROM stages WHERE id = ?
+DB --> StageRepo: Stage
+StageRepo --> Service: Stage
+
+Service -> PhraseRepo: FindByStageID(stageID)
+PhraseRepo -> DB: SELECT * FROM phrases\nWHERE stage_id = ?\nORDER BY sequence_number
+DB --> PhraseRepo: Phrases
+PhraseRepo --> Service: []Phrase
+Service --> Handler: Stage + []Phrase
+Handler --> App: Stage details with phrases
+App --> Player: Show phrases to type
+
+== Play Game ==
+Player -> App: Type phrases
+App -> App: Measure time\nCount errors
+
+== Submit Score ==
+Player -> App: Complete stage
+App -> Handler: POST /api/scores/submit\n{\n  stage_id,\n  total_time_ms,\n  total_errors\n}
+Handler -> Service: SubmitScore(userID, stageID,\ntotalTimeMs, totalErrors)
+
+Service -> StageRepo: FindByID(stageID)
+StageRepo -> DB: Get stage
+DB --> Service: Stage
+
+Service -> PhraseRepo: FindByStageID(stageID)
+PhraseRepo -> DB: Get phrases
+DB --> Service: []Phrase
+
+Service -> Service: Calculate metrics:\n- Total chars\n- Avg multiplier\n- Accuracy\n- Typing speed (WPM)
+
+Service -> Calculator: ValidateMetrics(accuracy,\ntypingSpeed, timeTaken)
+Calculator --> Service: Valid
+
+Service -> Calculator: CalculateScore(CalculationInput)
+Calculator -> Calculator: Apply formula:\n- Base score from accuracy & speed\n- Apply multipliers\n- Apply penalties\n- Apply bonuses
+Calculator --> Service: CalculationResult
+
+Service -> Service: Create Score model
+
+Service -> ScoreRepo: Create(score)
+ScoreRepo -> DB: INSERT INTO scores\n(allow multiple attempts)
+DB --> ScoreRepo: Success
+ScoreRepo --> Service: Success
+
+Service --> Handler: Score + "INSERTED"
+Handler --> App: {\n  status: "INSERTED",\n  final_score: 1234.56\n}
+App --> Player: Show score result
+
+== View Leaderboard ==
+Player -> App: View leaderboard
+App -> Handler: GET /api/leaderboard?stage_id=xxx
+Handler -> Service: GetLeaderboard(stageID, limit)
+Service -> ScoreRepo: FindLeaderboardByStage(stageID, 20)
+ScoreRepo -> DB: SELECT best score per user\nfor this stage\nORDER BY score DESC
+DB --> ScoreRepo: Top scores
+ScoreRepo --> Service: []Score
+Service --> Handler: []Score
+Handler --> App: Leaderboard entries\n(with usernames)
+App --> Player: Display rankings
+
+@enduml
+

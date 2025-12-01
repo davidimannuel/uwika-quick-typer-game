@@ -1,0 +1,74 @@
+@startuml Quick Typer Game - Local Development Deployment
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Deployment Diagram - Local Development with Ngrok
+
+Deployment_Node(mobile, "Mobile Device", "Android/iOS") {
+    Container(mobileApp, "Quick Typer App", "Flutter/React Native", "Game mobile application")
+}
+
+Deployment_Node(devMachine, "Developer Machine", "MacOS") {
+    
+    Deployment_Node(docker, "Docker", "OrbStack/Docker Desktop") {
+        Deployment_Node(postgresContainer, "Container", "quick_typer_db") {
+            ContainerDb(postgres, "PostgreSQL 16", "Alpine", "Database\nPort: 5432")
+        }
+    }
+    
+    Deployment_Node(terminal1, "Terminal 1", "zsh") {
+        Container(apiLocal, "API Server", "Go Binary", "Runs on localhost:8080")
+    }
+    
+    Deployment_Node(terminal2, "Terminal 2", "zsh") {
+        Container(ngrok, "Ngrok", "Tunnel", "Exposes localhost:8080\nto public URL")
+    }
+}
+
+Deployment_Node(ngrokCloud, "Ngrok Cloud", "Cloud Service") {
+    Container(ngrokEndpoint, "Public Endpoint", "HTTPS", "https://xxxx.ngrok-free.app")
+}
+
+Rel(mobileApp, ngrokEndpoint, "HTTPS/JSON", "443")
+Rel(ngrokEndpoint, ngrok, "Tunnel")
+Rel(ngrok, apiLocal, "HTTP", "localhost:8080")
+Rel(apiLocal, postgres, "TCP", "localhost:5432")
+
+note right of mobile
+  **Mobile App**
+  Base URL points to
+  ngrok public URL
+end note
+
+note right of ngrok
+  **Commands:**
+  Terminal 1: make run-db
+  Terminal 2: make run-api
+  Terminal 3: make ngrok
+end note
+
+note right of postgres
+  **Docker Compose**
+  Services:
+  - postgres (exposed :5432)
+  - migrate (runs migrations)
+  
+  API connects to:
+  DB_HOST=localhost
+  DB_PORT=5432
+end note
+
+note bottom of apiLocal
+  **Environment:**
+  DB_HOST=localhost
+  DB_PORT=5432
+  DB_USER=postgres
+  DB_PASSWORD=s3cret
+  DB_NAME=quick_typer
+  PORT=8080
+end note
+
+@enduml
+

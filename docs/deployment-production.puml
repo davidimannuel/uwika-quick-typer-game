@@ -1,0 +1,116 @@
+@startuml Quick Typer Game - Production Deployment
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Deployment Diagram - Production (Docker)
+
+Deployment_Node(mobile, "Mobile Device", "Android") {
+    Container(mobileApp, "Quick Typer App", "Java Native Android", "Game mobile application")
+}
+
+Deployment_Node(browser, "Web Browser", "Chrome/Firefox/Safari") {
+    Container(adminBrowser, "Admin Dashboard", "Web Browser", "Admin interface")
+}
+
+Deployment_Node(server, "Production Server", "Linux Server / Cloud VM") {
+    
+    Deployment_Node(docker, "Docker", "Container Runtime") {
+        
+        Deployment_Node(apiContainer, "Container", "quick_typer_api") {
+            Container(api, "API Server", "Go Binary", "REST API on port 8080")
+        }
+        
+        Deployment_Node(adminContainer, "Container", "quick_typer_admin") {
+            Container(adminWeb, "Admin Web", "Static Server", "Serves admin UI on port 3000")
+        }
+        
+        Deployment_Node(dbContainer, "Container", "quick_typer_db") {
+            ContainerDb(postgres, "PostgreSQL 16", "Alpine", "Database on port 5432")
+        }
+        
+        Deployment_Node(migrateContainer, "Container", "quick_typer_migrate") {
+            Container(migrate, "Migrate", "migrate/migrate", "Runs DB migrations on startup")
+        }
+    }
+}
+
+Rel(mobileApp, api, "HTTPS/JSON", "443 or 8080")
+Rel(adminBrowser, adminWeb, "HTTPS", "443 or 3000")
+Rel(adminWeb, api, "API calls", "HTTP")
+
+Rel(api, postgres, "TCP", "5432")
+Rel(migrate, postgres, "Runs migrations", "5432")
+
+note right of docker
+  **Docker Compose Services:**
+  - API Server (Go)
+  - Admin Web (static)
+  - PostgreSQL
+  - Migrate (init container)
+  
+  **Network:**
+  - Bridge network
+  - Internal communication
+  
+  **Volumes:**
+  - postgres_data (persistent)
+end note
+
+note right of apiContainer
+  **Environment:**
+  DB_HOST=postgres
+  DB_PORT=5432
+  DB_USER=postgres
+  DB_PASSWORD=***
+  DB_NAME=quick_typer
+  PORT=8080
+  
+  **Health Check:**
+  HTTP GET /health
+  
+  **Restart Policy:**
+  unless-stopped
+end note
+
+note right of dbContainer
+  **Persistent Storage:**
+  Volume: postgres_data
+  
+  **Health Check:**
+  pg_isready -U postgres
+  
+  **Backup Strategy:**
+  - Volume snapshots
+  - pg_dump scheduled
+end note
+
+note left of mobileApp
+  **Configuration:**
+  Base URL points to:
+  - Production domain
+  - Server IP + port
+  
+  Example:
+  https://api.quicktyper.com
+  or
+  http://server-ip:8080
+end note
+
+note bottom of server
+  **Production Deployment:**
+  1. Clone repository
+  2. Configure environment (.env)
+  3. Run: docker-compose up -d
+  4. Migrations run automatically
+  5. API & Admin ready
+  
+  **Scaling Options:**
+  - Multiple API containers (load balancer)
+  - Separate DB server
+  - Reverse proxy (Nginx/Caddy)
+end note
+
+@enduml
+

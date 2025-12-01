@@ -1,0 +1,115 @@
+@startuml Quick Typer Game - Database Schema
+
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+hide methods
+hide stereotypes
+
+table(users) {
+  primary_key(id): UUID
+  --
+  username: VARCHAR(255) UNIQUE
+  password_hash: VARCHAR(255)
+  role: VARCHAR(50)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(personal_access_tokens) {
+  primary_key(id): UUID
+  --
+  foreign_key(user_id): UUID
+  token: VARCHAR(255) UNIQUE
+  expires_at: TIMESTAMP
+  revoked_at: TIMESTAMP
+  created_at: TIMESTAMP
+}
+
+table(themes) {
+  primary_key(id): UUID
+  --
+  name: VARCHAR(255) UNIQUE
+  description: TEXT
+  created_at: TIMESTAMP
+}
+
+table(stages) {
+  primary_key(id): UUID
+  --
+  name: VARCHAR(255)
+  foreign_key(theme_id): UUID
+  difficulty: VARCHAR(50)
+  is_active: BOOLEAN
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+
+table(phrases) {
+  primary_key(id): UUID
+  --
+  foreign_key(stage_id): UUID
+  text: TEXT
+  sequence_number: INTEGER
+  base_multiplier: DECIMAL(10,2)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+  --
+  UNIQUE(stage_id, sequence_number)
+}
+
+table(scores) {
+  primary_key(id): SERIAL
+  --
+  foreign_key(user_id): UUID
+  foreign_key(stage_id): UUID
+  final_score: DECIMAL(10,2)
+  total_time_ms: INTEGER
+  total_errors: INTEGER
+  completed_at: TIMESTAMP
+}
+
+users ||--o{ personal_access_tokens : "has many"
+users ||--o{ scores : "has many"
+
+themes ||--o{ stages : "has many"
+
+stages ||--o{ phrases : "has many"
+stages ||--o{ scores : "has many"
+
+note top of users
+  **Roles:**
+  - admin
+  - user (default)
+end note
+
+note top of stages
+  **Difficulty:**
+  - easy
+  - medium
+  - hard
+  
+  **is_active:**
+  Only active stages shown to players
+end note
+
+note top of scores
+  **Migration 000003:**
+  Changed from composite PK to SERIAL
+  to allow multiple attempts per user/stage
+  
+  **Indexes:**
+  - (user_id, stage_id, final_score DESC)
+  - (stage_id, final_score DESC)
+  - (user_id, final_score DESC)
+end note
+
+note top of phrases
+  **base_multiplier:**
+  Used in score calculation
+  to weight phrase difficulty
+end note
+
+@enduml
+

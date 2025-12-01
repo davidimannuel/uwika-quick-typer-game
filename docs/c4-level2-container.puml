@@ -1,0 +1,97 @@
+@startuml Quick Typer Game - Container Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 2: Container Diagram
+
+Person(player, "Player", "User yang bermain game")
+Person(admin, "Administrator", "Admin mengelola konten")
+
+System_Boundary(quickTyper, "Quick Typer Game System") {
+    Container(mobileApp, "Mobile App", "Java Native Android", "Interface untuk bermain game typing, melihat leaderboard")
+    
+    Container(adminWeb, "Admin Web", "HTML/CSS/JavaScript", "Dashboard untuk admin mengelola stages, phrases, themes")
+    
+    Container(api, "API Server", "Go (Gin Framework)", "REST API untuk game logic, authentication, dan data management")
+    
+    ContainerDb(database, "Database", "PostgreSQL 16", "Menyimpan users, stages, phrases, scores, themes, tokens")
+}
+
+Rel(player, mobileApp, "Bermain game", "Mobile UI")
+Rel(admin, adminWeb, "Mengelola konten", "Web Browser")
+
+Rel(mobileApp, api, "API calls", "HTTPS/JSON")
+Rel(adminWeb, api, "API calls", "HTTPS/JSON")
+
+Rel(api, database, "Reads/Writes", "TCP/PostgreSQL")
+
+note right of api
+  **Architecture:**
+  - Clean Architecture / Layered
+  - Repository Pattern
+  - Domain-Driven Design
+  
+  **Layers:**
+  1. Presentation (Handlers)
+  2. Application (Services)
+  3. Domain (Models, Business Logic)
+  4. Infrastructure (DB, External)
+  
+  **Key Services:**
+  - Auth Service (JWT tokens)
+  - Game Service (gameplay logic)
+  - Admin Service (content management)
+  - Score Calculator (domain service)
+  
+  **Deployment:**
+  - Containerized with Docker
+  - Scalable & portable
+end note
+
+note right of database
+  **Main Tables:**
+  - users (auth & profile)
+  - personal_access_tokens
+  - themes (programming, web, etc)
+  - stages (difficulty levels)
+  - phrases (typing content)
+  - scores (multiple attempts)
+  
+  **Key Features:**
+  - Multiple score attempts per user/stage
+  - Leaderboard query optimization
+  - Theme-based stage organization
+  
+  **Deployment:**
+  - PostgreSQL 16 container
+  - Persistent volume for data
+end note
+
+note left of mobileApp
+  **Features:**
+  - User registration & login
+  - Browse active stages
+  - Type phrases dengan timer
+  - Real-time error tracking
+  - Submit score
+  - View leaderboard
+  
+  **Metrics Tracked:**
+  - Total time (ms)
+  - Total errors
+  → API calculates WPM & accuracy
+end note
+
+note left of adminWeb
+  **Admin Features:**
+  - Create/Edit/Delete stages
+  - Manage phrases per stage
+  - Set stage difficulty
+  - Activate/Deactivate stages
+  - View all themes
+  - User management
+end note
+
+@enduml

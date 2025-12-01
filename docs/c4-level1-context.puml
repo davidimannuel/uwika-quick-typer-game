@@ -1,0 +1,37 @@
+@startuml Quick Typer Game - System Context
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 1: System Context Diagram
+
+Person(player, "Player", "User yang bermain game typing")
+Person(admin, "Administrator", "User yang mengelola konten game")
+
+System(quickTyper, "Quick Typer Game System", "Platform game mengetik untuk meningkatkan typing speed dan accuracy")
+
+Rel(player, quickTyper, "Bermain game, melihat leaderboard", "HTTPS/JSON")
+Rel(admin, quickTyper, "Mengelola stages, phrases, themes", "HTTPS/JSON")
+
+note right of quickTyper
+  **Core Features:**
+  - User authentication & authorization
+  - Stage & phrase management
+  - Typing game dengan scoring system
+  - Leaderboard per stage
+  - Multiple attempts allowed
+  
+  **Key Metrics:**
+  - Typing speed (WPM)
+  - Accuracy (%)
+  - Score dengan bonuses & penalties
+  
+  **Deployment:**
+  - Containerized (Docker)
+  - API Server (Go)
+  - PostgreSQL Database
+end note
+
+@enduml
+

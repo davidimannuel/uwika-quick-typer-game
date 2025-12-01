@@ -59,6 +59,22 @@ restart-all:
 run-all-build:
 	docker-compose up --build -d
 
+# Run database only (for local API development)
+run-db:
+	docker-compose up -d postgres migrate
+
+stop-db:
+	docker-compose stop postgres migrate
+
+# Local development workflow
+dev-local:
+	@echo "Starting database..."
+	@make run-db
+	@echo "Waiting for database to be ready..."
+	@sleep 5
+	@echo "Database ready! Now run 'make run-api' in another terminal"
+	@echo "To expose API with ngrok, run 'make ngrok' in another terminal"
+
 logs:
 	docker-compose logs -f
 
@@ -68,11 +84,38 @@ logs-api:
 logs-migrate:
 	docker-compose logs migrate
 
+logs-db:
+	docker-compose logs -f postgres
+
 # Database commands
 db-reset:
 	docker-compose down -v
 	docker-compose up --build -d
 
 # Utility
+# 8080 is the port of the API
 ngrok:
 	ngrok http 8080
+
+# Complete local development setup
+help-local:
+	@echo "=== Local Development Guide ==="
+	@echo ""
+	@echo "1. Start database (Postgres + migrations):"
+	@echo "   make run-db"
+	@echo ""
+	@echo "2. Run API locally (in new terminal):"
+	@echo "   make run-api"
+	@echo ""
+	@echo "3. Expose API with ngrok (in new terminal):"
+	@echo "   make ngrok"
+	@echo ""
+	@echo "4. Stop database:"
+	@echo "   make stop-db"
+	@echo ""
+	@echo "Database connection details:"
+	@echo "  Host: localhost"
+	@echo "  Port: 5432"
+	@echo "  User: postgres"
+	@echo "  Password: s3cret"
+	@echo "  Database: quick_typer"

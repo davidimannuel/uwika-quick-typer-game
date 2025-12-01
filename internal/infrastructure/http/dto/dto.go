@@ -77,8 +77,8 @@ type PhraseResponse struct {
 // Score DTOs
 type SubmitScoreRequest struct {
 	StageID     string `json:"stage_id" binding:"required"`
-	TotalTimeMs int    `json:"total_time_ms" binding:"required"`
-	TotalErrors int    `json:"total_errors" binding:"required"`
+	TotalTimeMs int    `json:"total_time_ms" binding:"required,min=1"`
+	TotalErrors int    `json:"total_errors" binding:"min=0"`
 }
 
 type SubmitScoreResponse struct {
@@ -100,4 +100,3 @@ type ErrorResponse struct {
 type MessageResponse struct {
 	Message string `json:"message"`
 }
-

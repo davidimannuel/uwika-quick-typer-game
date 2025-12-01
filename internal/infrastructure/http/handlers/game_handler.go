@@ -37,6 +37,7 @@ func (h *GameHandler) GetStages(c *gin.Context) {
 			ID:         stage.ID,
 			Name:       stage.Name,
 			Difficulty: stage.Difficulty,
+			IsActive:   stage.IsActive,
 		})
 	}
 
@@ -71,6 +72,7 @@ func (h *GameHandler) GetStageDetail(c *gin.Context) {
 		Name:       stage.Name,
 		ThemeID:    stage.ThemeID,
 		Difficulty: stage.Difficulty,
+		IsActive:   stage.IsActive,
 		Phrases:    phrasesResponse,
 	}
 

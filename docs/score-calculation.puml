@@ -1,0 +1,117 @@
+@startuml Quick Typer Game - Score Calculation Flow
+
+start
+
+:Receive Score Submission;
+note right
+  **Input:**
+  - user_id
+  - stage_id
+  - total_time_ms
+  - total_errors
+end note
+
+:Get Stage & Phrases;
+
+partition "Calculate Raw Metrics" {
+  :Calculate Total Characters;
+  :Calculate Average Multiplier;
+  
+  :Calculate Accuracy;
+  note right
+    accuracy = (totalChars - totalErrors) / totalChars * 100
+    if accuracy < 0 then 0
+  end note
+  
+  :Calculate Typing Speed (WPM);
+  note right
+    timeTakenSeconds = totalTimeMs / 1000
+    typingSpeed = (totalChars / timeTakenSeconds) * 60 / 5
+    
+    WPM = chars per second * 60 / 5
+    (5 chars average per word)
+  end note
+}
+
+:Validate Metrics;
+note right
+  **Domain Service Validation:**
+  - accuracy: 0-100
+  - typingSpeed: 0-300 WPM
+  - timeTaken: > 0
+end note
+
+if (Valid?) then (yes)
+  partition "Score Calculator (Domain Service)" {
+    :Calculate Base Score;
+    note right
+      baseScore = (accuracy / 100) * typingSpeed * 10
+    end note
+    
+    :Apply Base Multiplier;
+    note right
+      withMultiplier = baseScore * avgMultiplier
+    end note
+    
+    :Apply Accuracy Bonus;
+    note right
+      if accuracy >= 95:
+        bonus = score * 0.5
+      else if accuracy >= 90:
+        bonus = score * 0.25
+      else if accuracy >= 85:
+        bonus = score * 0.1
+      else:
+        bonus = 0
+    end note
+    
+    :Apply Speed Bonus;
+    note right
+      if typingSpeed >= 80 WPM:
+        bonus += score * 0.3
+      else if typingSpeed >= 60 WPM:
+        bonus += score * 0.15
+    end note
+    
+    :Apply Error Penalty;
+    note right
+      if totalErrors > 0:
+        errorRate = totalErrors / totalChars
+        penalty = score * errorRate * 0.5
+    end note
+    
+    :Apply Time Penalties;
+    note right
+      if timeTaken > 180s:
+        penalty += score * 0.2
+      else if timeTaken > 120s:
+        penalty += score * 0.1
+    end note
+    
+    :Calculate Final Score;
+    note right
+      finalScore = baseScore + bonuses - penalties
+      if finalScore < 0 then 0
+    end note
+  }
+  
+  :Create Score Record;
+  
+  :Insert to Database;
+  note right
+    **Allow Multiple Attempts**
+    Each submission creates new record
+    Leaderboard shows best score per user
+  end note
+  
+  :Return Final Score;
+  
+  stop
+  
+else (no)
+  :Return Validation Error;
+  stop
+endif
+
+@enduml
+

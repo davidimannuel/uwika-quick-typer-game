@@ -1,0 +1,218 @@
+@startuml Quick Typer Game - Layered Architecture Detail
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+
+title Layered Architecture - Technical Detail
+
+package "Presentation Layer" #E8F5E9 {
+  [HTTP Router\n(Gin)] as Router
+  [Auth Middleware\n(JWT)] as Middleware
+  
+  package "Handlers" {
+    [Game Handler] as GameHandler
+    [Auth Handler] as AuthHandler
+    [Admin Handler] as AdminHandler
+  }
+  
+  [DTO\n(Request/Response)] as DTO
+}
+
+package "Application Layer" #E3F2FD {
+  package "Services" {
+    [Game Service] as GameService
+    [Auth Service] as AuthService
+    [Admin Service] as AdminService
+  }
+}
+
+package "Domain Layer" #FFF3E0 {
+  package "Models" {
+    [User] as UserModel
+    [Stage] as StageModel
+    [Phrase] as PhraseModel
+    [Score] as ScoreModel
+    [Theme] as ThemeModel
+    [Token] as TokenModel
+  }
+  
+  package "Domain Services" {
+    [Score Calculator] as ScoreCalculator
+  }
+  
+  package "Repository Interfaces" {
+    interface "IUserRepository" as IUserRepo
+    interface "IStageRepository" as IStageRepo
+    interface "IPhraseRepository" as IPhraseRepo
+    interface "IScoreRepository" as IScoreRepo
+    interface "IThemeRepository" as IThemeRepo
+    interface "ITokenRepository" as ITokenRepo
+  }
+}
+
+package "Infrastructure Layer" #F3E5F5 {
+  package "Persistence (Postgres)" {
+    [User Repository] as UserRepo
+    [Stage Repository] as StageRepo
+    [Phrase Repository] as PhraseRepo
+    [Score Repository] as ScoreRepo
+    [Theme Repository] as ThemeRepo
+    [Token Repository] as TokenRepo
+  }
+  
+  [Database Connection\n(database/sql)] as DB
+}
+
+database "PostgreSQL 16" #B2DFDB {
+  [users]
+  [personal_access_tokens]
+  [themes]
+  [stages]
+  [phrases]
+  [scores]
+}
+
+' Presentation Layer Relations
+Router --> Middleware
+Middleware --> GameHandler
+Middleware --> AuthHandler
+Middleware --> AdminHandler
+
+GameHandler ..> DTO : uses
+AuthHandler ..> DTO : uses
+AdminHandler ..> DTO : uses
+
+' Handler -> Service
+GameHandler --> GameService
+AuthHandler --> AuthService
+AdminHandler --> AdminService
+
+' Application -> Domain
+GameService --> IStageRepo
+GameService --> IPhraseRepo
+GameService --> IScoreRepo
+GameService --> ScoreCalculator
+
+AuthService --> IUserRepo
+AuthService --> ITokenRepo
+
+AdminService --> IStageRepo
+AdminService --> IPhraseRepo
+AdminService --> IUserRepo
+AdminService --> IThemeRepo
+
+' Services use Models
+GameService ..> StageModel
+GameService ..> PhraseModel
+GameService ..> ScoreModel
+
+AuthService ..> UserModel
+AuthService ..> TokenModel
+
+AdminService ..> StageModel
+AdminService ..> PhraseModel
+AdminService ..> ThemeModel
+
+' Domain -> Infrastructure (Interface Implementation)
+IUserRepo <|.. UserRepo
+IStageRepo <|.. StageRepo
+IPhraseRepo <|.. PhraseRepo
+IScoreRepo <|.. ScoreRepo
+IThemeRepo <|.. ThemeRepo
+ITokenRepo <|.. TokenRepo
+
+' Infrastructure -> Database
+UserRepo --> DB
+StageRepo --> DB
+PhraseRepo --> DB
+ScoreRepo --> DB
+ThemeRepo --> DB
+TokenRepo --> DB
+
+DB --> [users]
+DB --> [personal_access_tokens]
+DB --> [themes]
+DB --> [stages]
+DB --> [phrases]
+DB --> [scores]
+
+' Notes
+note right of Router
+  **Presentation Layer**
+  - HTTP endpoints & routing
+  - Request validation
+  - Response formatting
+  - Middleware (auth, logging, CORS)
+  
+  **Key Files:**
+  - router/router.go
+  - handlers/*.go
+  - dto/dto.go
+  - middleware/auth.go
+end note
+
+note right of GameService
+  **Application Layer**
+  - Orchestrates business logic
+  - Coordinates multiple repositories
+  - Transaction management
+  - Delegates domain logic to services
+  
+  **Key Files:**
+  - services/game_service.go
+  - services/auth_service.go
+  - services/admin_service.go
+end note
+
+note right of ScoreCalculator
+  **Domain Layer**
+  - Core business rules
+  - Pure domain logic
+  - No external dependencies
+  - Repository interfaces (not implementations)
+  
+  **Key Files:**
+  - models/*.go
+  - services/score_calculator.go
+  - repositories/repositories.go
+end note
+
+note right of DB
+  **Infrastructure Layer**
+  - Database implementations
+  - External service integrations
+  - Concrete repository implementations
+  - Implements domain interfaces
+  
+  **Key Files:**
+  - persistence/postgres/*_repository.go
+  - database/database.go
+end note
+
+note bottom of PostgreSQL
+  **Migration Strategy:**
+  - 000001: Initial schema
+  - 000002: Seed data
+  - 000003: Multiple score attempts
+  
+  **Key Features:**
+  - UUIDs as primary keys
+  - Foreign key constraints
+  - Indexes for performance
+  - Timestamps for audit
+end note
+
+legend right
+  |<back:#E8F5E9> Presentation </back>| HTTP/REST Layer |
+  |<back:#E3F2FD> Application </back>| Service Orchestration |
+  |<back:#FFF3E0> Domain </back>| Business Rules & Interfaces |
+  |<back:#F3E5F5> Infrastructure </back>| External Dependencies |
+  
+  **Dependency Rule:**
+  Dependencies flow inward → to Domain
+  Domain has no external dependencies
+endlegend
+
+@enduml
+

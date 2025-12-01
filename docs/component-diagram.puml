@@ -1,0 +1,97 @@
+@startuml Quick Typer Game - Component Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram - Quick Typer Game
+
+Container_Boundary(api, "API Server") {
+    Component(router, "Router", "Gin", "HTTP routing and middleware")
+    Component(authMiddleware, "Auth Middleware", "Go", "JWT token validation")
+    
+    Component(gameHandler, "Game Handler", "Go", "Game endpoints handler")
+    Component(authHandler, "Auth Handler", "Go", "Authentication endpoints")
+    Component(adminHandler, "Admin Handler", "Go", "Admin endpoints handler")
+    
+    Component(gameService, "Game Service", "Go", "Game business logic")
+    Component(authService, "Auth Service", "Go", "Authentication logic")
+    Component(adminService, "Admin Service", "Go", "Admin operations")
+    
+    Component(scoreCalc, "Score Calculator", "Go", "Domain service for score calculation")
+    
+    Component(userRepo, "User Repository", "Go", "User data access")
+    Component(stageRepo, "Stage Repository", "Go", "Stage data access")
+    Component(phraseRepo, "Phrase Repository", "Go", "Phrase data access")
+    Component(scoreRepo, "Score Repository", "Go", "Score data access")
+    Component(themeRepo, "Theme Repository", "Go", "Theme data access")
+    Component(tokenRepo, "Token Repository", "Go", "Token data access")
+    
+    Component(dbConn, "DB Connection", "database/sql", "PostgreSQL connection pool")
+}
+
+ContainerDb(db, "Database", "PostgreSQL 16", "Stores all application data")
+
+Container(mobileApp, "Mobile App", "Flutter/React Native", "Quick Typer mobile application")
+Container(adminWeb, "Admin Web", "HTML/JS", "Admin dashboard")
+
+Rel(mobileApp, router, "Uses", "HTTPS/JSON")
+Rel(adminWeb, router, "Uses", "HTTPS/JSON")
+
+Rel(router, authMiddleware, "Uses")
+Rel(authMiddleware, gameHandler, "Protects")
+Rel(authMiddleware, authHandler, "Protects (some endpoints)")
+Rel(authMiddleware, adminHandler, "Protects (admin only)")
+
+Rel(gameHandler, gameService, "Uses")
+Rel(authHandler, authService, "Uses")
+Rel(adminHandler, adminService, "Uses")
+
+Rel(gameService, stageRepo, "Uses")
+Rel(gameService, phraseRepo, "Uses")
+Rel(gameService, scoreRepo, "Uses")
+Rel(gameService, scoreCalc, "Uses", "Calculate scores")
+
+Rel(authService, userRepo, "Uses")
+Rel(authService, tokenRepo, "Uses")
+
+Rel(adminService, stageRepo, "Uses")
+Rel(adminService, phraseRepo, "Uses")
+Rel(adminService, userRepo, "Uses")
+Rel(adminService, themeRepo, "Uses")
+
+Rel(userRepo, dbConn, "Uses")
+Rel(stageRepo, dbConn, "Uses")
+Rel(phraseRepo, dbConn, "Uses")
+Rel(scoreRepo, dbConn, "Uses")
+Rel(themeRepo, dbConn, "Uses")
+Rel(tokenRepo, dbConn, "Uses")
+
+Rel(dbConn, db, "Reads/Writes", "TCP/PostgreSQL")
+
+note right of scoreCalc
+  **Pure Domain Logic**
+  - No external dependencies
+  - Testable business rules
+  - Score formula implementation
+end note
+
+note right of gameService
+  **Application Service**
+  - Orchestrates repositories
+  - Delegates calculation to domain
+  - Manages transactions
+end note
+
+note bottom of db
+  **Tables:**
+  - users
+  - personal_access_tokens
+  - themes
+  - stages
+  - phrases
+  - scores
+end note
+
+@enduml
+
