@@ -3,7 +3,7 @@ package dto
 // Auth DTOs
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required"`
 }
 
 type LoginRequest struct {
