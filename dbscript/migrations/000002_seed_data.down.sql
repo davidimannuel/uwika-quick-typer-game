@@ -1,6 +1,17 @@
--- Remove seed data (optional - usually we don't rollback seed data)
-DELETE FROM phrases WHERE id::text LIKE '20000000-%';
-DELETE FROM stages WHERE id::text LIKE '10000000-%';
-DELETE FROM themes WHERE id::text LIKE '30000000-%';
-DELETE FROM users WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
+-- Remove all seed data
+-- Delete in correct order to respect foreign keys
 
+-- First delete scores (references users and stages)
+DELETE FROM scores;
+
+-- Delete phrases (references stages)
+DELETE FROM phrases;
+
+-- Delete stages (references themes)  
+DELETE FROM stages;
+
+-- Delete themes
+DELETE FROM themes;
+
+-- Delete users
+DELETE FROM users;

@@ -26,19 +26,19 @@ export DB_NAME=quick_typer
 export DB_SSLMODE=disable
 
 # Start API in background
-echo "Starting API on port 8080..."
-PORT=8080 go run cmd/api/main.go &
+echo "Starting API on port 3000..."
+PORT=3000 go run cmd/api/main.go &
 API_PID=$!
 
 # Start Admin Web in background
-echo "Starting Admin Web on port 3000..."
-PORT=3000 go run cmd/admin-web/main.go &
+echo "Starting Admin Web on port 3001..."
+PORT=3001 go run cmd/admin-web/main.go &
 ADMIN_PID=$!
 
 echo ""
 echo "✅ Services started!"
-echo "📝 API: http://localhost:8080"
-echo "🎨 Admin Panel: http://localhost:3000"
+echo "📝 API: http://localhost:3000"
+echo "🎨 Admin Panel: http://localhost:3001"
 echo ""
 echo "Press Ctrl+C to stop all services..."
 

@@ -73,7 +73,7 @@ docker-compose up --build -d
 ```
 
 Services yang berjalan:
-- **REST API**: http://localhost:8080
+- **REST API**: http://localhost:3000
 - **Admin Web**: http://localhost:3000
 - **PostgreSQL**: localhost:5432
 

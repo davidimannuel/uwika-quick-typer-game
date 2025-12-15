@@ -1,7 +1,6 @@
 // API Configuration
-const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8080' 
-    : window.location.origin;
+// Admin-web proxies API requests, so we use relative URLs
+const API_URL = '';
 
 let authToken = localStorage.getItem('authToken');
 let stages = [];
@@ -10,35 +9,37 @@ let phrases = [];
 // Utility Functions
 function showMessage(message, isError = false) {
     const messageDiv = document.getElementById('message');
-    messageDiv.textContent = message;
-    messageDiv.className = isError ? 'error' : 'success';
+    messageDiv.innerHTML = `
+        <div class="alert ${isError ? 'alert-danger-custom' : 'alert-success-custom'} alert-dismissible fade show" role="alert">
+            ${isError ? '⚠️' : '✅'} ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
     messageDiv.classList.remove('hidden');
     setTimeout(() => {
         messageDiv.classList.add('hidden');
     }, 5000);
 }
 
-function showTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    // Show selected tab
-    document.getElementById(tabName + 'Tab').classList.add('active');
-    event.target.classList.add('active');
-
-    // Load data for the selected tab
-    if (tabName === 'stages') {
-        loadStages();
-    } else if (tabName === 'phrases') {
-        loadStagesForDropdown();
-        loadPhrases();
+// Tab switching - Bootstrap 5 handles tabs, but we need to load data
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for tab changes
+    const phrasesTab = document.getElementById('phrases-tab');
+    const stagesTab = document.getElementById('stages-tab');
+    
+    if (phrasesTab) {
+        phrasesTab.addEventListener('shown.bs.tab', function() {
+            loadStagesForDropdown();
+            loadPhrases();
+        });
     }
-}
+    
+    if (stagesTab) {
+        stagesTab.addEventListener('shown.bs.tab', function() {
+            loadStages();
+        });
+    }
+});
 
 // Authentication
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -81,6 +82,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('mainContent').classList.remove('hidden');
         
+        loadThemes();
         loadStages();
     } catch (error) {
         const errorDiv = document.getElementById('loginError');
@@ -151,19 +153,25 @@ function renderStages() {
     const tbody = document.getElementById('stagesTableBody');
     
     if (stages.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">No stages found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No stages found. Create your first stage above!</td></tr>';
         return;
     }
 
     tbody.innerHTML = stages.map(stage => `
         <tr>
-            <td>${stage.name}</td>
-            <td>${stage.theme_name || stage.theme_id}</td>
-            <td><span class="badge badge-${stage.difficulty}">${stage.difficulty}</span></td>
-            <td><span class="badge ${stage.is_active ? 'badge-success' : 'badge-danger'}">${stage.is_active ? 'Active' : 'Inactive'}</span></td>
-            <td class="action-buttons">
-                <button class="btn btn-small" onclick="editStage('${stage.id}')">Edit</button>
-                <button class="btn btn-small btn-danger" onclick="deleteStage('${stage.id}')">Delete</button>
+            <td><strong>${stage.name}</strong></td>
+            <td><span class="text-muted">${stage.theme_name || stage.theme_id}</span></td>
+            <td><span class="badge-${stage.difficulty}">${stage.difficulty.charAt(0).toUpperCase() + stage.difficulty.slice(1)}</span></td>
+            <td><span class="badge ${stage.is_active ? 'badge-active' : 'badge-inactive'}">${stage.is_active ? '● Active' : '○ Inactive'}</span></td>
+            <td>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-action btn-edit" onclick="editStage('${stage.id}')">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn btn-action btn-delete" onclick="deleteStage('${stage.id}')">
+                        🗑️ Delete
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -192,6 +200,7 @@ document.getElementById('stageForm').addEventListener('submit', async (e) => {
             editingStageId = null;
             document.getElementById('stageFormTitle').textContent = 'Create New Stage';
             document.querySelector('#stageForm button[type="submit"]').textContent = 'Create Stage';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
         } else {
             // Create new stage
             await apiRequest('/admin/stage', {
@@ -202,6 +211,7 @@ document.getElementById('stageForm').addEventListener('submit', async (e) => {
         }
 
         document.getElementById('stageForm').reset();
+        document.getElementById('stageIsActive').checked = true;
         loadStages();
         loadStagesForDropdown();
     } catch (error) {
@@ -212,9 +222,10 @@ document.getElementById('stageForm').addEventListener('submit', async (e) => {
 function cancelEdit() {
     editingStageId = null;
     document.getElementById('stageForm').reset();
+    document.getElementById('stageIsActive').checked = true;
     document.getElementById('stageFormTitle').textContent = 'Create New Stage';
     document.querySelector('#stageForm button[type="submit"]').textContent = 'Create Stage';
-    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('cancelEditBtn').classList.add('hidden');
 }
 
 function editStage(stageId) {
@@ -234,14 +245,14 @@ function editStage(stageId) {
     editingStageId = stageId;
     document.getElementById('stageFormTitle').textContent = 'Edit Stage';
     document.querySelector('#stageForm button[type="submit"]').textContent = 'Update Stage';
-    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
 
     // Scroll to form
     document.getElementById('stageForm').scrollIntoView({ behavior: 'smooth' });
 }
 
 async function deleteStage(stageId) {
-    if (!confirm('Are you sure you want to delete this stage?')) {
+    if (!confirm('Are you sure you want to delete this stage? This action cannot be undone.')) {
         return;
     }
 
@@ -318,23 +329,30 @@ function renderPhrases() {
     const tbody = document.getElementById('phrasesTableBody');
     
     if (phrases.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6">No phrases found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No phrases found. Create your first phrase above!</td></tr>';
         return;
     }
 
     tbody.innerHTML = phrases.map(phrase => {
         const stage = stages.find(s => s.id === phrase.stage_id);
         const stageName = stage ? stage.name : (phrase.stageName || 'Unknown');
+        const truncatedText = phrase.text.length > 50 ? phrase.text.substring(0, 50) + '...' : phrase.text;
         
         return `
             <tr>
-                <td>${stageName}</td>
-                <td>${phrase.text}</td>
-                <td>${phrase.sequence_number}</td>
-                <td>${phrase.multiplier || phrase.base_multiplier}</td>
-                <td class="action-buttons">
-                    <button class="btn btn-small" onclick="editPhrase('${phrase.id}')">Edit</button>
-                    <button class="btn btn-small btn-danger" onclick="deletePhrase('${phrase.id}')">Delete</button>
+                <td><span class="badge bg-secondary">${stageName}</span></td>
+                <td title="${phrase.text}">${truncatedText}</td>
+                <td><span class="badge bg-light text-dark">#${phrase.sequence_number}</span></td>
+                <td><strong>${phrase.multiplier || phrase.base_multiplier}x</strong></td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-action btn-edit" onclick="editPhrase('${phrase.id}')">
+                            ✏️ Edit
+                        </button>
+                        <button class="btn btn-action btn-delete" onclick="deletePhrase('${phrase.id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -364,7 +382,7 @@ document.getElementById('phraseForm').addEventListener('submit', async (e) => {
             editingPhraseId = null;
             document.getElementById('phraseFormTitle').textContent = 'Create New Phrase';
             document.querySelector('#phraseForm button[type="submit"]').textContent = 'Create Phrase';
-            document.getElementById('cancelPhraseEditBtn').style.display = 'none';
+            document.getElementById('cancelPhraseEditBtn').classList.add('hidden');
         } else {
             // Create new phrase
             await apiRequest('/admin/phrase', {
@@ -375,6 +393,7 @@ document.getElementById('phraseForm').addEventListener('submit', async (e) => {
         }
 
         document.getElementById('phraseForm').reset();
+        document.getElementById('phraseMultiplier').value = '1.0';
         loadPhrases();
     } catch (error) {
         showMessage('Error saving phrase: ' + error.message, true);
@@ -398,25 +417,29 @@ function editPhrase(phraseId) {
     editingPhraseId = phraseId;
     document.getElementById('phraseFormTitle').textContent = 'Edit Phrase';
     document.querySelector('#phraseForm button[type="submit"]').textContent = 'Update Phrase';
-    document.getElementById('cancelPhraseEditBtn').style.display = 'inline-block';
+    document.getElementById('cancelPhraseEditBtn').classList.remove('hidden');
 
-    // Switch to phrases tab if not already there
-    showTab('phrases');
+    // Switch to phrases tab using Bootstrap
+    const phrasesTab = new bootstrap.Tab(document.getElementById('phrases-tab'));
+    phrasesTab.show();
 
     // Scroll to form
-    document.getElementById('phraseForm').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+        document.getElementById('phraseForm').scrollIntoView({ behavior: 'smooth' });
+    }, 150);
 }
 
 function cancelPhraseEdit() {
     editingPhraseId = null;
     document.getElementById('phraseForm').reset();
+    document.getElementById('phraseMultiplier').value = '1.0';
     document.getElementById('phraseFormTitle').textContent = 'Create New Phrase';
     document.querySelector('#phraseForm button[type="submit"]').textContent = 'Create Phrase';
-    document.getElementById('cancelPhraseEditBtn').style.display = 'none';
+    document.getElementById('cancelPhraseEditBtn').classList.add('hidden');
 }
 
 async function deletePhrase(phraseId) {
-    if (!confirm('Are you sure you want to delete this phrase?')) {
+    if (!confirm('Are you sure you want to delete this phrase? This action cannot be undone.')) {
         return;
     }
 
@@ -432,25 +455,6 @@ async function deletePhrase(phraseId) {
     }
 }
 
-// Initialize
-if (authToken) {
-    // Verify token is still valid
-    apiRequest('/api/auth/profile')
-        .then(profile => {
-            if (profile.role === 'admin') {
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
-                loadStages();
-                loadThemes(); // Load themes on init
-            } else {
-                logout();
-            }
-        })
-        .catch(() => {
-            logout();
-        });
-}
-
 // Load themes
 async function loadThemes() {
     try {
@@ -464,3 +468,21 @@ async function loadThemes() {
     }
 }
 
+// Initialize
+if (authToken) {
+    // Verify token is still valid
+    apiRequest('/api/auth/profile')
+        .then(profile => {
+            if (profile.role === 'admin') {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                loadThemes();
+                loadStages();
+            } else {
+                logout();
+            }
+        })
+        .catch(() => {
+            logout();
+        });
+}

@@ -65,18 +65,20 @@ CREATE TABLE IF NOT EXISTS phrases (
 -- Create index for ordering phrases
 CREATE INDEX IF NOT EXISTS idx_phrases_stage_sequence ON phrases(stage_id, sequence_number);
 
--- Create scores table with composite unique key
+-- Create scores table (allows multiple attempts per user per stage)
 CREATE TABLE IF NOT EXISTS scores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     stage_id UUID NOT NULL,
     final_score DECIMAL(10, 2) NOT NULL,
     total_time_ms INTEGER NOT NULL,
     total_errors INTEGER NOT NULL,
     completed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, stage_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (stage_id) REFERENCES stages(id) ON DELETE CASCADE
 );
 
--- Create index for leaderboard queries
+-- Create indexes for scores queries
+CREATE INDEX IF NOT EXISTS idx_scores_user_stage ON scores(user_id, stage_id);
 CREATE INDEX IF NOT EXISTS idx_scores_stage_score ON scores(stage_id, final_score DESC);
+CREATE INDEX IF NOT EXISTS idx_scores_user_score ON scores(user_id, final_score DESC);

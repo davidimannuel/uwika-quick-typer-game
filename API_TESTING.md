@@ -2,14 +2,14 @@
 
 ## Base URL
 ```
-http://localhost:8080
+http://localhost:3000
 ```
 
 ## 1. Authentication Endpoints
 
 ### 1.1 Register User
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -30,7 +30,7 @@ Response:
 
 ### 1.2 Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
@@ -49,7 +49,7 @@ Response:
 
 ### 1.3 Get Profile
 ```bash
-curl http://localhost:8080/api/auth/profile \
+curl http://localhost:3000/api/auth/profile \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -66,7 +66,7 @@ Response:
 
 ### 2.1 Get Active Stages
 ```bash
-curl http://localhost:8080/api/stages \
+curl http://localhost:3000/api/stages \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -88,7 +88,7 @@ Response:
 
 ### 2.2 Get Stage Detail with Phrases
 ```bash
-curl http://localhost:8080/api/stage/stage-001 \
+curl http://localhost:3000/api/stage/stage-001 \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -118,7 +118,7 @@ Response:
 
 ### 2.3 Submit Score
 ```bash
-curl -X POST http://localhost:8080/api/score/submit \
+curl -X POST http://localhost:3000/api/score/submit \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -142,7 +142,7 @@ Status values:
 
 ### 2.4 Get Leaderboard
 ```bash
-curl "http://localhost:8080/api/leaderboard?stage_id=stage-001&limit=10" \
+curl "http://localhost:3000/api/leaderboard?stage_id=stage-001&limit=10" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -166,7 +166,7 @@ Response:
 
 ### 3.1 Create Stage
 ```bash
-curl -X POST http://localhost:8080/admin/stage \
+curl -X POST http://localhost:3000/admin/stage \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -190,7 +190,7 @@ Response:
 
 ### 3.2 Update Stage
 ```bash
-curl -X PUT http://localhost:8080/admin/stage/stage-001 \
+curl -X PUT http://localhost:3000/admin/stage/stage-001 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -203,7 +203,7 @@ curl -X PUT http://localhost:8080/admin/stage/stage-001 \
 
 ### 3.3 Delete Stage
 ```bash
-curl -X DELETE http://localhost:8080/admin/stage/stage-001 \
+curl -X DELETE http://localhost:3000/admin/stage/stage-001 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 
@@ -216,13 +216,13 @@ Response:
 
 ### 3.4 Get All Stages (including inactive)
 ```bash
-curl http://localhost:8080/admin/stages \
+curl http://localhost:3000/admin/stages \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 
 ### 3.5 Create Phrase
 ```bash
-curl -X POST http://localhost:8080/admin/phrase \
+curl -X POST http://localhost:3000/admin/phrase \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -246,7 +246,7 @@ Response:
 
 ### 3.6 Update Phrase
 ```bash
-curl -X PUT http://localhost:8080/admin/phrase/phrase-001 \
+curl -X PUT http://localhost:3000/admin/phrase/phrase-001 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -259,19 +259,19 @@ curl -X PUT http://localhost:8080/admin/phrase/phrase-001 \
 
 ### 3.7 Delete Phrase
 ```bash
-curl -X DELETE http://localhost:8080/admin/phrase/phrase-001 \
+curl -X DELETE http://localhost:3000/admin/phrase/phrase-001 \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 
 ### 3.8 Get Phrases by Stage
 ```bash
-curl "http://localhost:8080/admin/phrases?stage_id=stage-001" \
+curl "http://localhost:3000/admin/phrases?stage_id=stage-001" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 
 ## 4. Health Check
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 ```
 
 Response:
@@ -363,14 +363,14 @@ Very fast typing:
 
 1. **Login sebagai admin**
    ```bash
-   TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+   TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
      -H "Content-Type: application/json" \
      -d '{"username":"admin","password":"admin123"}' | jq -r '.access_token')
    ```
 
 2. **Create stage**
    ```bash
-   curl -X POST http://localhost:8080/admin/stage \
+   curl -X POST http://localhost:3000/admin/stage \
      -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"name":"Test Stage","theme":"Test","difficulty":"easy","is_active":true}'
@@ -378,20 +378,20 @@ Very fast typing:
 
 3. **Register user**
    ```bash
-   USER_TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/register \
+   USER_TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/register \
      -H "Content-Type: application/json" \
      -d '{"username":"testuser","password":"test123"}' | jq -r '.access_token')
    ```
 
 4. **Get stages as user**
    ```bash
-   curl http://localhost:8080/api/stages \
+   curl http://localhost:3000/api/stages \
      -H "Authorization: Bearer $USER_TOKEN"
    ```
 
 5. **Submit score**
    ```bash
-   curl -X POST http://localhost:8080/api/score/submit \
+   curl -X POST http://localhost:3000/api/score/submit \
      -H "Authorization: Bearer $USER_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"stage_id":"stage-001","total_time_ms":10000,"total_errors":0}'
@@ -399,7 +399,7 @@ Very fast typing:
 
 6. **Check leaderboard**
    ```bash
-   curl "http://localhost:8080/api/leaderboard?stage_id=stage-001" \
+   curl "http://localhost:3000/api/leaderboard?stage_id=stage-001" \
      -H "Authorization: Bearer $USER_TOKEN"
    ```
 

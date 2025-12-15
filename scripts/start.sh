@@ -12,7 +12,7 @@ fi
 docker-compose up --build
 
 echo "✅ Environment started!"
-echo "📝 Backend API: http://localhost:8080"
+echo "📝 Backend API: http://localhost:3000"
 echo "🎨 Admin Panel: http://localhost:3000"
 echo "🗄️  PostgreSQL: localhost:5432"
 

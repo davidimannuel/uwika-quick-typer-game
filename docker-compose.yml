@@ -43,9 +43,9 @@ services:
       DB_PASSWORD: s3cret
       DB_NAME: quick_typer
       DB_SSLMODE: disable
-      PORT: 8080
+      PORT: 3000
     ports:
-      - "8080:8080"
+      - "3000:3000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -59,10 +59,10 @@ services:
       dockerfile: Dockerfile.admin
     container_name: quick_typer_admin_web
     environment:
-      PORT: 3000
-      API_URL: http://api:8080
+      PORT: 3001
+      API_URL: http://api:3000
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - api
     networks:

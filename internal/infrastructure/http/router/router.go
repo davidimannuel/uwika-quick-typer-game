@@ -1,6 +1,9 @@
 package router
 
 import (
+	"log"
+	"time"
+
 	"uwika_quick_typer_game/internal/application/services"
 	"uwika_quick_typer_game/internal/domain/repositories"
 	"uwika_quick_typer_game/internal/infrastructure/http/handlers"
@@ -16,6 +19,30 @@ func SetupRouter(
 	userRepo repositories.UserRepository,
 ) *gin.Engine {
 	r := gin.Default()
+
+	// Logging middleware
+	r.Use(func(c *gin.Context) {
+		startTime := time.Now()
+		path := c.Request.URL.Path
+		method := c.Request.Method
+
+		// Process request
+		c.Next()
+
+		// Calculate latency
+		latency := time.Since(startTime)
+		statusCode := c.Writer.Status()
+		clientIP := c.ClientIP()
+
+		log.Printf("[%s] %s %s | Status: %d | Latency: %v | IP: %s",
+			time.Now().Format("2006-01-02 15:04:05"),
+			method,
+			path,
+			statusCode,
+			latency,
+			clientIP,
+		)
+	})
 
 	// CORS middleware
 	r.Use(func(c *gin.Context) {

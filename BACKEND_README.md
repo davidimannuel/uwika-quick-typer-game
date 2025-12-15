@@ -63,7 +63,7 @@ docker-compose up --build -d
 ```
 
 Services yang berjalan:
-- **Backend API**: http://localhost:8080
+- **Backend API**: http://localhost:3000
 - **Admin Web**: http://localhost:3000
 - **PostgreSQL**: localhost:5432
 
@@ -184,7 +184,7 @@ npx serve -p 3000
 ### 1. Register User
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -195,7 +195,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 ### 2. Login
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
@@ -215,14 +215,14 @@ Response:
 ### 3. Get Stages (Dengan Token)
 
 ```bash
-curl http://localhost:8080/api/stages \
+curl http://localhost:3000/api/stages \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 4. Submit Score
 
 ```bash
-curl -X POST http://localhost:8080/api/score/submit \
+curl -X POST http://localhost:3000/api/score/submit \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

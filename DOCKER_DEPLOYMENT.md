@@ -68,7 +68,7 @@ migrate_1  | 2/u seed_data (XX.XXs)
 docker-compose ps
 
 # API health check
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 
 # Admin web
 open http://localhost:3000

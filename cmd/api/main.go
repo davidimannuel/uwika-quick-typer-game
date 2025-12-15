@@ -47,7 +47,7 @@ func main() {
 	r := router.SetupRouter(authService, gameService, adminService, userRepo)
 
 	// Start server
-	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "3000")
 	log.Printf("Server starting on port %s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
@@ -61,4 +61,3 @@ func getEnv(key, defaultValue string) string {
 	}
 	return value
 }
-

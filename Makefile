@@ -87,15 +87,42 @@ logs-migrate:
 logs-db:
 	docker-compose logs -f postgres
 
-# Database commands
-db-reset:
-	docker-compose down -v
-	docker-compose up --build -d
 
 # Utility
-# 8080 is the port of the API
+# 3000 is the port of the API
 ngrok:
-	ngrok http 8080
+	ngrok http 3000
+
+# CLI Commands (Docker-based, no Go CLI required)
+# Change user password (interactive)
+# Usage: make change-password
+change-password:
+	@chmod +x ./scripts/change-password.sh
+	@./scripts/change-password.sh
+
+# Change user password with arguments
+# Usage: make set-password username=admin password=newpassword123
+set-password:
+	@chmod +x ./scripts/change-password.sh
+	@./scripts/change-password.sh $(username) $(password)
+
+# List all users
+# Usage: make list-users
+list-users:
+	@chmod +x ./scripts/list-users.sh
+	@./scripts/list-users.sh
+
+# Create new user
+# Usage: make create-user username=newuser password=pass123 role=user
+create-user:
+	@chmod +x ./scripts/create-user.sh
+	@./scripts/create-user.sh $(username) $(password) $(role)
+
+# Quick database query
+# Usage: make db-query sql="SELECT * FROM users"
+db-query:
+	@docker run --rm --network host postgres:16-alpine \
+		psql "postgresql://postgres:s3cret@localhost:5432/quick_typer" -c "$(sql)"
 
 # Complete local development setup
 help-local:
